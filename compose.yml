@@ -1,0 +1,193 @@
+# yw-mall-deploy — Application layer compose file.
+#
+# Prerequisites:
+#   1. Start the infra layer first:
+#        cd ../env && docker compose up -d
+#   2. Then bring up the app layer:
+#        docker compose up -d
+#
+# The `infra` network is declared external — it must already exist
+# (created by the env project's compose.yml).
+
+networks:
+  infra:
+    external: true
+
+# ─────────────────────────────────────────────────────────
+# Shared build defaults via YAML anchors
+# ─────────────────────────────────────────────────────────
+x-rpc-defaults: &rpc-defaults
+  build:
+    context: ../yw-mall
+    dockerfile: Dockerfile
+  networks: [infra]
+  restart: unless-stopped
+  depends_on:
+    db-init:
+      condition: service_completed_successfully
+
+services:
+
+  # ── DDL bootstrap (one-shot, exits 0 after applying all SQL) ─────────────
+  db-init:
+    image: mysql:9.6.0
+    volumes:
+      - ../yw-mall:/workspace:ro
+      - ./scripts/db-init.sh:/db-init.sh:ro
+    command: bash /db-init.sh
+    environment:
+      MYSQL_PWD: proxysql123
+    networks: [infra]
+    restart: "no"
+
+  # ── RPC services ─────────────────────────────────────────────────────────
+
+  mall-user-rpc:
+    <<: *rpc-defaults
+    build:
+      context: ../yw-mall
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mall-user-rpc
+    command: ["-f", "etc/user.yaml"]
+
+  mall-shop-rpc:
+    <<: *rpc-defaults
+    build:
+      context: ../yw-mall
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mall-shop-rpc
+    command: ["-f", "etc/shop.yaml"]
+
+  mall-product-rpc:
+    <<: *rpc-defaults
+    build:
+      context: ../yw-mall
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mall-product-rpc
+    command: ["-f", "etc/product.yaml"]
+
+  mall-order-rpc:
+    <<: *rpc-defaults
+    build:
+      context: ../yw-mall
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mall-order-rpc
+    command: ["-f", "etc/order.yaml"]
+
+  mall-cart-rpc:
+    <<: *rpc-defaults
+    build:
+      context: ../yw-mall
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mall-cart-rpc
+    command: ["-f", "etc/cart.yaml"]
+
+  mall-payment-rpc:
+    <<: *rpc-defaults
+    build:
+      context: ../yw-mall
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mall-payment-rpc
+    command: ["-f", "etc/payment.yaml"]
+
+  mall-activity-rpc:
+    <<: *rpc-defaults
+    build:
+      context: ../yw-mall
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mall-activity-rpc
+    command: ["-f", "etc/activity.yaml"]
+
+  mall-rule-rpc:
+    <<: *rpc-defaults
+    build:
+      context: ../yw-mall
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mall-rule-rpc
+    command: ["-f", "etc/rule.yaml"]
+
+  mall-workflow-rpc:
+    <<: *rpc-defaults
+    build:
+      context: ../yw-mall
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mall-workflow-rpc
+    command: ["-f", "etc/workflow.yaml"]
+
+  mall-reward-rpc:
+    <<: *rpc-defaults
+    build:
+      context: ../yw-mall
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mall-reward-rpc
+    command: ["-f", "etc/reward.yaml"]
+
+  mall-risk-rpc:
+    <<: *rpc-defaults
+    build:
+      context: ../yw-mall
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mall-risk-rpc
+    command: ["-f", "etc/risk.yaml"]
+
+  mall-review-rpc:
+    <<: *rpc-defaults
+    build:
+      context: ../yw-mall
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mall-review-rpc
+    command: ["-f", "etc/review.yaml"]
+
+  mall-logistics-rpc:
+    <<: *rpc-defaults
+    build:
+      context: ../yw-mall
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mall-logistics-rpc
+    command: ["-f", "etc/logistics.yaml"]
+
+  mall-activity-async-worker:
+    <<: *rpc-defaults
+    build:
+      context: ../yw-mall
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mall-activity-async-worker
+    command: ["-f", "etc/worker.yaml"]
+
+  # ── API Gateway ───────────────────────────────────────────────────────────
+  mall-api:
+    <<: *rpc-defaults
+    build:
+      context: ../yw-mall
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mall-api
+    command: ["-f", "etc/mall-api.yaml"]
+    ports:
+      - "18888:18888"
+
+  # ── Frontend (uni-app H5 + nginx) ─────────────────────────────────────────
+  mall-fe:
+    build:
+      context: ../yw-mall-fe
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    networks: [infra]
+    restart: unless-stopped
+    depends_on:
+      - mall-api
