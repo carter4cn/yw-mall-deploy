@@ -1,0 +1,25 @@
+# Limit build context when building the seed image (context: ..)
+# Only yw-mall Go source and yw-mall-deploy scripts are needed.
+
+# Heavy infra data — never needed
+env/
+
+# Frontend — not needed for seed
+yw-mall-fe/
+
+# Git objects, IDE state
+yw-mall/.git/
+yw-mall/.omc/
+yw-mall/logs/
+yw-mall-deploy/.git/
+yw-mall-deploy/.omc/
+
+# Only the services with seed programs are copied in the Dockerfile;
+# excluding others here cuts the Go module download time too.
+yw-mall/mall-cart-rpc/
+yw-mall/mall-payment-rpc/
+yw-mall/mall-risk-rpc/
+yw-mall/mall-review-rpc/
+yw-mall/mall-logistics-rpc/
+yw-mall/mall-activity-async-worker/
+yw-mall/mall-api/

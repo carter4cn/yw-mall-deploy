@@ -1,26 +1,29 @@
 # yw-mall-deploy — Application layer compose file.
 #
-# Prerequisites:
-#   1. Start the infra layer first:
-#        cd ../env && docker compose up -d
-#   2. Then bring up the app layer:
-#        docker compose up -d
+# Quick start:
+#   make infra-up   → start env layer (MySQL, Redis, etcd, MinIO …)
+#   make up         → build & start app (db-init → RPCs → API → FE)
+#   make seed       → populate demo data (run once)
+#   make start      → infra-up + up in one shot
 #
-# The `infra` network is declared external — it must already exist
-# (created by the env project's compose.yml).
+# Ports exposed to host:
+#   18080   Frontend (uni-app H5)
+#   18888   API gateway
+#
+# Network: joins the Podman network "env_infra" created by env/compose.yml.
 
 networks:
-  infra:
+  env_infra:
     external: true
 
 # ─────────────────────────────────────────────────────────
-# Shared build defaults via YAML anchors
+# Shared build defaults
 # ─────────────────────────────────────────────────────────
 x-rpc-defaults: &rpc-defaults
   build:
     context: ../yw-mall
     dockerfile: Dockerfile
-  networks: [infra]
+  networks: [env_infra]
   restart: unless-stopped
   depends_on:
     db-init:
@@ -28,16 +31,16 @@ x-rpc-defaults: &rpc-defaults
 
 services:
 
-  # ── DDL bootstrap (one-shot, exits 0 after applying all SQL) ─────────────
+  # ── DDL bootstrap (one-shot) ──────────────────────────────────────────────
   db-init:
-    image: mysql:9.6.0
+    image: docker.io/library/mysql:9.6.0
     volumes:
       - ../yw-mall:/workspace:ro
       - ./scripts/db-init.sh:/db-init.sh:ro
     command: bash /db-init.sh
     environment:
       MYSQL_PWD: proxysql123
-    networks: [infra]
+    networks: [env_infra]
     restart: "no"
 
   # ── RPC services ─────────────────────────────────────────────────────────
@@ -47,8 +50,7 @@ services:
     build:
       context: ../yw-mall
       dockerfile: Dockerfile
-      args:
-        SERVICE: mall-user-rpc
+      args: { SERVICE: mall-user-rpc }
     command: ["-f", "etc/user.yaml"]
 
   mall-shop-rpc:
@@ -56,8 +58,7 @@ services:
     build:
       context: ../yw-mall
       dockerfile: Dockerfile
-      args:
-        SERVICE: mall-shop-rpc
+      args: { SERVICE: mall-shop-rpc }
     command: ["-f", "etc/shop.yaml"]
 
   mall-product-rpc:
@@ -65,8 +66,7 @@ services:
     build:
       context: ../yw-mall
       dockerfile: Dockerfile
-      args:
-        SERVICE: mall-product-rpc
+      args: { SERVICE: mall-product-rpc }
     command: ["-f", "etc/product.yaml"]
 
   mall-order-rpc:
@@ -74,8 +74,7 @@ services:
     build:
       context: ../yw-mall
       dockerfile: Dockerfile
-      args:
-        SERVICE: mall-order-rpc
+      args: { SERVICE: mall-order-rpc }
     command: ["-f", "etc/order.yaml"]
 
   mall-cart-rpc:
@@ -83,8 +82,7 @@ services:
     build:
       context: ../yw-mall
       dockerfile: Dockerfile
-      args:
-        SERVICE: mall-cart-rpc
+      args: { SERVICE: mall-cart-rpc }
     command: ["-f", "etc/cart.yaml"]
 
   mall-payment-rpc:
@@ -92,8 +90,7 @@ services:
     build:
       context: ../yw-mall
       dockerfile: Dockerfile
-      args:
-        SERVICE: mall-payment-rpc
+      args: { SERVICE: mall-payment-rpc }
     command: ["-f", "etc/payment.yaml"]
 
   mall-activity-rpc:
@@ -101,8 +98,7 @@ services:
     build:
       context: ../yw-mall
       dockerfile: Dockerfile
-      args:
-        SERVICE: mall-activity-rpc
+      args: { SERVICE: mall-activity-rpc }
     command: ["-f", "etc/activity.yaml"]
 
   mall-rule-rpc:
@@ -110,8 +106,7 @@ services:
     build:
       context: ../yw-mall
       dockerfile: Dockerfile
-      args:
-        SERVICE: mall-rule-rpc
+      args: { SERVICE: mall-rule-rpc }
     command: ["-f", "etc/rule.yaml"]
 
   mall-workflow-rpc:
@@ -119,8 +114,7 @@ services:
     build:
       context: ../yw-mall
       dockerfile: Dockerfile
-      args:
-        SERVICE: mall-workflow-rpc
+      args: { SERVICE: mall-workflow-rpc }
     command: ["-f", "etc/workflow.yaml"]
 
   mall-reward-rpc:
@@ -128,8 +122,7 @@ services:
     build:
       context: ../yw-mall
       dockerfile: Dockerfile
-      args:
-        SERVICE: mall-reward-rpc
+      args: { SERVICE: mall-reward-rpc }
     command: ["-f", "etc/reward.yaml"]
 
   mall-risk-rpc:
@@ -137,8 +130,7 @@ services:
     build:
       context: ../yw-mall
       dockerfile: Dockerfile
-      args:
-        SERVICE: mall-risk-rpc
+      args: { SERVICE: mall-risk-rpc }
     command: ["-f", "etc/risk.yaml"]
 
   mall-review-rpc:
@@ -146,8 +138,7 @@ services:
     build:
       context: ../yw-mall
       dockerfile: Dockerfile
-      args:
-        SERVICE: mall-review-rpc
+      args: { SERVICE: mall-review-rpc }
     command: ["-f", "etc/review.yaml"]
 
   mall-logistics-rpc:
@@ -155,8 +146,7 @@ services:
     build:
       context: ../yw-mall
       dockerfile: Dockerfile
-      args:
-        SERVICE: mall-logistics-rpc
+      args: { SERVICE: mall-logistics-rpc }
     command: ["-f", "etc/logistics.yaml"]
 
   mall-activity-async-worker:
@@ -164,8 +154,7 @@ services:
     build:
       context: ../yw-mall
       dockerfile: Dockerfile
-      args:
-        SERVICE: mall-activity-async-worker
+      args: { SERVICE: mall-activity-async-worker }
     command: ["-f", "etc/worker.yaml"]
 
   # ── API Gateway ───────────────────────────────────────────────────────────
@@ -174,11 +163,19 @@ services:
     build:
       context: ../yw-mall
       dockerfile: Dockerfile
-      args:
-        SERVICE: mall-api
+      args: { SERVICE: mall-api }
     command: ["-f", "etc/mall-api.yaml"]
     ports:
       - "18888:18888"
+
+  # ── Seed (opt-in profile; run via: make seed) ─────────────────────────────
+  db-seed:
+    build:
+      context: ..
+      dockerfile: yw-mall-deploy/seed.Dockerfile
+    networks: [env_infra]
+    restart: "no"
+    profiles: [seed]
 
   # ── Frontend (uni-app H5 + nginx) ─────────────────────────────────────────
   mall-fe:
@@ -186,8 +183,8 @@ services:
       context: ../yw-mall-fe
       dockerfile: Dockerfile
     ports:
-      - "80:80"
-    networks: [infra]
+      - "18080:80"
+    networks: [env_infra]
     restart: unless-stopped
     depends_on:
       - mall-api
