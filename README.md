@@ -27,14 +27,17 @@ Podman Compose deployment for the yw-mall Go microservices platform.
 # 1. 启动基础设施（MySQL × 4 + Redis Sentinel + Kafka + etcd + MinIO …）
 make infra-up
 
-# 2. 启动所有应用服务（15 个 RPC + API 网关 + 前端 Nginx）
+# 2. 将本地服务配置推送到 etcd（首次部署必须执行）
+make config-push
+
+# 3. 启动所有应用服务（15 个 RPC + API 网关 + 前端 Nginx）
 make up
 
-# 3. 写入 demo 数据（首次部署或 make nuke 之后执行，幂等安全）
+# 4. 写入 demo 数据（首次部署或 make nuke 之后执行，幂等安全）
 make seed
 ```
 
-一键启停：
+一键启停（非首次部署，etcd 中已有配置时可直接使用）：
 
 ```bash
 make start   # 等价于 make infra-up + make up
@@ -44,6 +47,9 @@ make stop    # 等价于 make down + make infra-down
 ## 常用命令
 
 ```bash
+make config-push     # 将本地 etc/*.yaml 推送到 etcd（首次部署或配置变更后执行）
+make config-pull     # 从 etcd 拉取所有配置并打印到 stdout
+make config-diff     # 对比 etcd 配置与本地文件是否一致
 make ps              # 查看所有服务状态
 make logs            # 追踪所有服务日志
 make logs-mall-api   # 追踪单个服务日志（替换 mall-api 为服务名）
