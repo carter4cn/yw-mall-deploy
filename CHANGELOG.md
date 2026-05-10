@@ -4,6 +4,30 @@ All notable changes to yw-mall-deploy are documented here.
 
 ---
 
+## [Unreleased]
+
+### 2026-05-10
+
+#### refactor: etcd key 全局规范化 + APP_ENV 注入
+
+配合 yw-mall 的 key 格式重构，部署层同步更新。
+
+**`.env`**
+- 新增 `APP_ENV=dev`，控制 etcd key 中的环境层级
+
+**`compose.yml`**
+- `x-rpc-defaults` 新增 `APP_ENV=${APP_ENV:-dev}` 环境变量，注入所有 RPC 容器
+
+**`scripts/config-push.sh` / `config-pull.sh` / `config-diff.sh`**
+- 三个脚本均改用 `APP_ENV="${APP_ENV:-dev}"` + `BASE="/config/${APP_ENV}/yw-mall"` 构建 key
+- 原 `declare -A` 关联数组改为两个并行数组（`KEYS` + `LOCAL_PATHS`），避免 bash 变量展开陷阱
+- 服务名同步更新：`mall-api` → `api-gateway`，`activity-async-worker` → `activity-worker`
+- 其余逻辑（dry-run、错误计数、etcdctl wrapper）保持不变
+
+切换环境只需改 `APP_ENV=prod` 并重新 `make config-push`，脚本自动操作对应 prefix。
+
+---
+
 ## [Unreleased] — feature/etcd-config-center
 
 ### 2026-05-10
