@@ -50,6 +50,21 @@ LOCAL_PATHS=(
     "mall-logistics-rpc/etc/logistics.yaml"
 )
 
+# Rewrite 127.0.0.1 loopback addresses to container names so configs work
+# inside Docker/Podman containers. Local YAML files keep 127.0.0.1 for dev.
+transform_for_deploy() {
+    sed \
+        -e 's|127\.0\.0\.1:2379|etcd1:2379|g' \
+        -e 's|127\.0\.0\.1:6033|proxysql:6033|g' \
+        -e 's|127\.0\.0\.1:6379|redis-master:6379|g' \
+        -e 's|127\.0\.0\.1:9000|minio:9000|g' \
+        -e 's|127\.0\.0\.1:19092|kafka1:9092|g' \
+        -e 's|127\.0\.0\.1:19093|kafka2:9092|g' \
+        -e 's|127\.0\.0\.1:19094|kafka3:9092|g' \
+        -e 's|127\.0\.0\.1:36789|dtm:36789|g' \
+        -e 's|127\.0\.0\.1:18888|mall-api:18888|g'
+}
+
 echo "==> Pushing configs to etcd $([ $DRY_RUN -eq 1 ] && echo "(DRY RUN)")"
 ok=0; fail=0
 
@@ -65,7 +80,7 @@ for i in "${!KEYS[@]}"; do
         ok=$((ok+1))
         continue
     fi
-    if etcdctl put "$key" < "$local_path" > /dev/null 2>&1; then
+    if transform_for_deploy < "$local_path" | etcdctl put "$key" > /dev/null 2>&1; then
         echo "  [OK]   $key ← $local_path"
         ok=$((ok+1))
     else

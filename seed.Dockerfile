@@ -22,6 +22,7 @@ COPY yw-mall/mall-activity-rpc  ./mall-activity-rpc
 COPY yw-mall/mall-reward-rpc    ./mall-reward-rpc
 
 RUN set -e; \
+    mkdir -p /out; \
     for svc in \
         mall-shop-rpc \
         mall-user-rpc \

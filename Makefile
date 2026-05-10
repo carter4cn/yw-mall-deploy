@@ -68,10 +68,8 @@ down: ## Stop app services (infra stays up)
 
 restart: down up ## Restart all app services
 
-rebuild: ## Full no-cache rebuild then start
-	$(COMPOSE) build --no-cache
-	$(COMPOSE) --profile seed build --no-cache db-seed
-	$(COMPOSE) up -d
+rebuild: ## Full no-cache rebuild then start (with progress bar)
+	@COMPOSE="$(COMPOSE)" bash scripts/rebuild.sh
 
 # ── Seed ─────────────────────────────────────────────────────────────────
 
