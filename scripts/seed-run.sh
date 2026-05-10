@@ -37,6 +37,11 @@ wait_tcp mall-rule-rpc      9011
 wait_tcp mall-activity-rpc  9010
 wait_tcp mall-reward-rpc    9013
 
+# TCP port open does not mean gRPC is ready — services still need time to
+# connect to etcd, load config, and finish registering handlers.
+echo "==> waiting 20s for gRPC handlers to fully register..."
+sleep 20
+
 echo ""
 echo "=== [1/7] Seeding shops ==="
 ./seed-mall-shop-rpc \
