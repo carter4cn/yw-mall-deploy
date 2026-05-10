@@ -12,7 +12,7 @@ BACKEND       := ../yw-mall
 FRONTEND      := ../yw-mall-fe
 MYSQL_DATA    := $(ENV_DIR)/data/mysql2
 
-.PHONY: help start stop infra-up infra-down minio-init up down build rebuild seed logs ps clean nuke nuke-mysql
+.PHONY: help start stop infra-up infra-down minio-init up down build rebuild seed logs ps clean nuke nuke-mysql config-push config-pull config-diff
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
@@ -101,3 +101,14 @@ nuke-mysql: ## Wipe MySQL data dirs without sudo (uses podman unshare) — DANGE
 	    $(MYSQL_DATA)/master1 $(MYSQL_DATA)/master2 \
 	    $(MYSQL_DATA)/slave1  $(MYSQL_DATA)/slave2
 	@echo "Done. Run 'make infra-up' then 'make seed' to reinitialize."
+
+# ── etcd Config Center ────────────────────────────────────────────────────────
+
+config-push: ## Push all local etc/*.yaml configs to etcd (first deploy or manual sync)
+	@bash scripts/config-push.sh
+
+config-pull: ## Pull configs from etcd and print to stdout
+	@bash scripts/config-pull.sh
+
+config-diff: ## Diff etcd configs against local etc/*.yaml files
+	@bash scripts/config-diff.sh
