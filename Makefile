@@ -12,7 +12,7 @@ BACKEND       := ../yw-mall
 FRONTEND      := ../yw-mall-fe
 MYSQL_DATA    := $(ENV_DIR)/data/mysql2
 
-.PHONY: help start stop infra-up infra-down minio-init up down build rebuild seed logs ps clean nuke nuke-mysql config-push config-pull config-diff
+.PHONY: help bootstrap start stop infra-up infra-down minio-init up down build rebuild seed logs ps clean nuke nuke-mysql config-push config-pull config-diff
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
@@ -25,7 +25,9 @@ help: ## Show this help
 
 # ── One-click ─────────────────────────────────────────────────────────────
 
-start: infra-up up ## One-click: start infra + app (first run builds images, takes ~5 min)
+bootstrap: infra-up config-push up seed ## First deploy: infra + push configs to etcd + app + demo data
+
+start: infra-up up ## One-click: start infra + app (configs already in etcd)
 
 stop: down infra-down ## Stop everything: app first, then infra
 
