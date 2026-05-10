@@ -23,21 +23,13 @@ Podman Compose deployment for the yw-mall Go microservices platform.
 
 ## 快速启动
 
+**首次部署**（一条命令完成全部初始化）：
+
 ```bash
-# 1. 启动基础设施（MySQL × 4 + Redis Sentinel + Kafka + etcd + MinIO …）
-make infra-up
-
-# 2. 将本地服务配置推送到 etcd（首次部署必须执行）
-make config-push
-
-# 3. 启动所有应用服务（15 个 RPC + API 网关 + 前端 Nginx）
-make up
-
-# 4. 写入 demo 数据（首次部署或 make nuke 之后执行，幂等安全）
-make seed
+make bootstrap   # infra-up → config-push → up → seed，约 5 分钟
 ```
 
-一键启停（非首次部署，etcd 中已有配置时可直接使用）：
+**日常启停**（etcd 中已有配置，无需重新推送）：
 
 ```bash
 make start   # 等价于 make infra-up + make up
