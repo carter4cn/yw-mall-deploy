@@ -210,11 +210,11 @@ run_parallel
 finish_bar "Go services (${TOTAL_GO})" "$TOTAL_GO" "$START" "$PROG"
 [ "$(cat "$FAIL_F")" -eq 0 ] || { echo "Go build failed — aborting."; exit 1; }
 
-# [2/3] Frontend + seed (in parallel with each other)
+# [2/3] Frontend + seed + admin-api (in parallel with each other)
 echo 0 > "$DONE_F"; echo 0 > "$FAIL_F"
-printf '[2/3] Frontend + seed\n'
+printf '[2/3] Frontend + seed + admin-api\n'
 START=$SECONDS
-show_progress 2 "fe + seed" &
+show_progress 3 "fe + seed + admin" &
 PROG=$!
 (
   $COMPOSE build $NO_CACHE_FLAG mall-fe >> "$LOG_DIR/mall-fe.log" 2>&1 && inc_done \
@@ -226,12 +226,18 @@ FE_PID=$!
     || { inc_fail; printf '\n  [FAIL] db-seed\n' >&2; }
 ) &
 SEED_PID=$!
+(
+  $COMPOSE build $NO_CACHE_FLAG mall-admin-api >> "$LOG_DIR/mall-admin-api.log" 2>&1 && inc_done \
+    || { inc_fail; printf '\n  [FAIL] mall-admin-api\n' >&2; }
+) &
+ADMIN_PID=$!
 # Only wait on the build subshells — bare `wait` would also block on the
 # show_progress infinite loop in $PROG.
 wait "$FE_PID" 2>/dev/null || true
 wait "$SEED_PID" 2>/dev/null || true
-finish_bar "fe + seed" 2 "$START" "$PROG"
-[ "$(cat "$FAIL_F")" -eq 0 ] || { echo "Frontend/seed build failed — aborting."; exit 1; }
+wait "$ADMIN_PID" 2>/dev/null || true
+finish_bar "fe + seed + admin" 3 "$START" "$PROG"
+[ "$(cat "$FAIL_F")" -eq 0 ] || { echo "Frontend/seed/admin build failed — aborting."; exit 1; }
 
 # [3/3] Start
 printf '[3/3] Starting services...\n'

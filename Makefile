@@ -19,9 +19,10 @@ help: ## Show this help
 	  awk 'BEGIN{FS=":.*## "}{printf "  \033[36m%-18s\033[0m %s\n",$$1,$$2}'
 	@echo ""
 	@echo "  After 'make start + make seed':"
-	@echo "    Frontend  →  http://localhost:18080"
-	@echo "    API       →  http://localhost:18888"
-	@echo "    MinIO UI  →  http://localhost:9001  (admin / admin123)"
+	@echo "    Frontend   →  http://localhost:18080"
+	@echo "    C-end API  →  http://localhost:18888"
+	@echo "    Admin API  →  http://localhost:18999  (admin / admin123)"
+	@echo "    MinIO UI   →  http://localhost:9001   (admin / admin123)"
 
 # ── One-click ─────────────────────────────────────────────────────────────
 

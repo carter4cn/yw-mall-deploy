@@ -8,7 +8,8 @@
 #
 # Ports exposed to host:
 #   18080   Frontend (uni-app H5)
-#   18888   API gateway
+#   18888   C-end API gateway
+#   18999   Admin / Merchant API gateway
 #
 # Network: joins the Podman network "env_infra" created by env/compose.yml.
 
@@ -179,6 +180,22 @@ services:
     networks: [env_infra]
     restart: "no"
     profiles: [seed]
+
+  # ── Admin API Gateway ─────────────────────────────────────────────────────
+  mall-admin-api:
+    build:
+      context: ..
+      dockerfile: yw-mall-admin/Dockerfile
+    networks: [env_infra]
+    restart: unless-stopped
+    environment:
+      - APP_ENV=${APP_ENV:-dev}
+    ports:
+      - "18999:18999"
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    command: ["-f", "etc/admin.yaml"]
 
   # ── Frontend (uni-app H5 + nginx) ─────────────────────────────────────────
   mall-fe:

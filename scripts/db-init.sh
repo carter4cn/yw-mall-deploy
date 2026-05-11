@@ -41,4 +41,38 @@ apply mall_review     mall-review-rpc/sql/review.sql
 apply mall_logistics  mall-logistics-rpc/sql/logistics.sql
 apply mall_shop       mall-shop-rpc/sql/shop.sql
 
+echo "Applying admin migrations..."
+apply mall_user       mall-user-rpc/sql/admin_user.sql
+apply mall_shop       mall-shop-rpc/sql/shop_application.sql
+apply mall_product    mall-product-rpc/sql/product_admin.sql
+apply mall_order      mall-order-rpc/sql/order_admin.sql
+apply mall_review     mall-review-rpc/sql/review_admin.sql
+apply mall_risk       mall-risk-rpc/sql/complaint.sql
+apply mall_rule       mall-rule-rpc/sql/rule_set.sql
+apply mall_payment    mall-payment-rpc/sql/merchant_wallet.sql
+
+echo "Applying P2 migrations..."
+apply mall_order      mall-payment-rpc/sql/settlement_v2.sql
+apply mall_shop       mall-shop-rpc/sql/shop_level.sql
+apply mall_activity   mall-activity-rpc/sql/shop_coupon.sql
+apply mall_activity   mall-activity-rpc/sql/sku_flash_discount.sql
+apply mall_shop       mall-shop-rpc/sql/shop_lifecycle.sql
+apply mall_logistics  mall-logistics-rpc/sql/freight_template.sql
+apply mall_risk       mall-risk-rpc/sql/sensitive_word.sql
+
+echo "Seeding default superadmin (admin / admin123)..."
+$MYSQL mall_user -e "
+  INSERT IGNORE INTO admin_user
+    (username, password_hash, email, role, permissions, status, create_time, update_time)
+  VALUES (
+    'admin',
+    '\$2a\$10\$918ykFIF5LoZpB0AylpKnuHRA/6qBeh5VtUa8XbPz1WREocgX8e.i',
+    'admin@mall.local',
+    'super_admin',
+    '[\"*\"]',
+    1,
+    UNIX_TIMESTAMP(), UNIX_TIMESTAMP()
+  );
+" 2>/dev/null && echo "  ✓ superadmin seeded" || echo "  ⚠ superadmin already exists"
+
 echo "✅ DB bootstrap complete"
