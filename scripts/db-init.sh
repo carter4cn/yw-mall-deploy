@@ -60,6 +60,9 @@ apply mall_shop       mall-shop-rpc/sql/shop_lifecycle.sql
 apply mall_logistics  mall-logistics-rpc/sql/freight_template.sql
 apply mall_risk       mall-risk-rpc/sql/sensitive_word.sql
 
+echo "Applying Sprint 1 migrations..."
+apply mall_order      mall-order-rpc/sql/order_timeline_v2.sql
+
 echo "Seeding default superadmin (admin / admin123)..."
 $MYSQL mall_user -e "
   INSERT IGNORE INTO admin_user
