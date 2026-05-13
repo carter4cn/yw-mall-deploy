@@ -6,6 +6,44 @@ All notable changes to yw-mall-deploy are documented here.
 
 ## [Unreleased]
 
+### 2026-05-14
+
+#### feat: 登录改造 P0 + P0.5 — 配套部署更新
+
+**背景**
+
+yw-mall 登录体系从 JWT 切换到 Opaque Token + Redis Session（详见 yw-mall-docs/feat/login-revamp.md）。
+今日完成 P0（mall-api/mall-user-rpc）+ P0.5（mall-admin-api 同步切换 + admin-fe）。
+部署层无 DDL 变更（session 全部走 Redis），但需推送新配置到 etcd。
+
+**etcd 配置推送**
+
+- `mall-user-rpc/etc/user.yaml` 新增 `Session` 块（AccessTTLSeconds=1800 / RefreshTTLSeconds=604800 / MaxRotateCount=10 / Redis）
+- 已执行 `make config-push`：15 个 yaml 全部同步到 `/config/dev/yw-mall/*`
+
+**容器镜像（待 next deploy 重建）**
+
+下次 `make rebuild` 时会自动 rebuild 以下镜像并带上新二进制：
+- mall-user-rpc — 新增 5 个 Session RPC
+- mall-api — SessionAuthMiddleware + /api/auth/{login,refresh,logout}
+- mall-admin-api — SessionAuthMiddleware（admin + merchant 双路由）+ 4 个新 auth handler
+
+**Redis 依赖确认**
+
+session/refresh/user_sessions:* key 全部写入主 Redis（已有 master + 2 slave），无需扩容。
+TTL 已对齐文档（access 30min，refresh 7d）；后续 P1 加入「我的设备」会读取 `user_sessions:{uid}` SET。
+
+**回滚预案**
+
+如需回滚到 JWT：
+1. `git revert` yw-mall + yw-mall-admin + yw-mall-fe + yw-mall-admin-fe 的 P0/P0.5 commit
+2. `make config-push` 重新同步旧 yaml
+3. `make rebuild`
+
+不需要数据迁移（Redis session 自然过期；user 表无变更）。
+
+---
+
 ### 2026-05-10
 
 #### refactor: etcd key 全局规范化 + APP_ENV 注入
